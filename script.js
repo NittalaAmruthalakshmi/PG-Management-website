@@ -1,0 +1,275 @@
+const KEY='pg-manager-v2';
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const TABS=[['home','Website home'],['dash','Dashboard'],['rooms','Floors & rooms'],['members','Members'],['past','Past members'],['rent','Rent & receipts'],['menu','Food menu'],['maint','Maintenance'],['rules','PG rules'],['visitors','Visitors'],['enq','Enquiries'],['exp','Expenses'],['staff','Staff & salary'],['report','Monthly report'],['more','Backup & settings']];
+const ICONS={home:'<path d="M3 12l9-9 9 9M5 10v10h14V10"/>',dash:'<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',rooms:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',members:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',past:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',rent:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',menu:'<path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/>',maint:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/>',visitors:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',enq:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',exp:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',staff:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',report:'<path d="M18 20V10M12 20V4M6 20v-6"/>',rules:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',more:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'};
+const ic=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const monthName=()=>new Date().toLocaleString('en-IN',{month:'long',year:'numeric'});
+
+function seed(){
+  const rooms=[];
+  [[1,[['101',3],['102',2],['103',4]]],[2,[['201',3],['202',3],['203',2]]],[3,[['301',4],['302',2]]]].forEach(([f,rs])=>rs.forEach(([no,beds])=>rooms.push({id:uid(),floor:f,no,beds,type:beds<=2?'AC':'Non-AC',rent:beds>=4?4500:beds===3?5500:6500})));
+  const names=['Ravi Kumar','Sneha Reddy','Anil Varma','Priya Sharma','Karthik Rao','Divya Lakshmi','Suresh Babu','Mounika','Harsha Vardhan','Lavanya'];
+  const members=[],payments=[];let i=0;const month=monthName();
+  rooms.forEach(r=>{const n=Math.max(0,r.beds-(i%3===0?1:0));for(let k=0;k<n&&i<names.length;k++,i++){const m={id:uid(),name:names[i],phone:'98480'+String(10000+i*137).slice(0,5),roomId:r.id,rent:r.rent,deposit:r.rent,paid:i%3!==1,joined:'2026-0'+(1+i%8)+'-05'};members.push(m);if(m.paid)payments.push({id:uid(),memberId:m.id,name:m.name,room:r.no,month,amount:m.rent,date:today(),mode:'UPI'})}});
+  const menu={},b=['Idli, sambar','Poha, tea','Dosa, chutney','Upma, banana','Puri, curry','Pongal, vada','Paratha, curd'],l=['Rice, dal, veg curry','Rice, sambar, fry','Veg pulao, raita','Rice, rasam, egg curry','Rice, dal, paneer','Veg biryani, raita','Special meals'],d=['Chapati, kurma','Rice, curd, pickle','Chapati, dal','Fried rice, manchurian','Chapati, aloo curry','Rice, chicken curry','Dosa, chutney'];
+  DAYS.forEach((x,j)=>menu[x]=[b[j],l[j],d[j]]);
+  return{name:'PG Manager',month,rooms,members,payments,menu,
+   tasks:[{id:uid(),room:'102',issue:'Ceiling fan making noise',priority:'medium',status:'open',date:today()},{id:uid(),room:'Common',issue:'Water purifier filter change',priority:'high',status:'in progress',date:today()}],
+   visitors:[{id:uid(),name:'Ramesh (father)',to:'Ravi Kumar',date:today(),inTime:'10:30',out:''}],
+   expenses:[{id:uid(),cat:'Electricity',amount:9200,date:today(),note:''},{id:uid(),cat:'Groceries',amount:14500,date:today(),note:''}],
+   notices:[{id:uid(),text:'Water supply will be off Sunday 10am to 1pm.'}]};
+}
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+  try{const o=JSON.parse(localStorage.getItem('pg-manager-v1')||'null');if(o){const s=seed();return Object.assign(s,o,{payments:[],visitors:[],expenses:[],notices:[]})}}catch(e){}
+  return seed();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let S=load(),tab='home',filter='all',q='',rentMonth='';
+
+const roomOf=id=>S.rooms.find(r=>r.id===id);
+const occ=id=>S.members.filter(m=>m.roomId===id).length;
+const sortedRooms=()=>[...S.rooms].sort((a,b)=>a.floor-b.floor||a.no.localeCompare(b.no,undefined,{numeric:true}));
+function totals(){
+  const beds=S.rooms.reduce((a,r)=>a+Number(r.beds),0),filled=S.members.length;
+  const paid=S.members.filter(m=>m.paid),unpaid=S.members.filter(m=>!m.paid);
+  const spent=S.expenses.filter(e=>e.month===S.month||(!e.month)).reduce((a,e)=>a+Number(e.amount),0);
+  return{floors:new Set(S.rooms.map(r=>r.floor)).size,rooms:S.rooms.length,beds,filled,vacant:beds-filled,paid:paid.length,unpaid:unpaid.length,got:paid.reduce((a,m)=>a+Number(m.rent),0),due:unpaid.reduce((a,m)=>a+Number(m.rent),0),spent};
+}
+function render(){
+  document.getElementById('nav').innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${k===tab}" data-tab="${k}">${ic(k)}${l}</button>`).join('');
+  document.getElementById('brand').textContent=S.name||'PG Manager';document.getElementById('mon').textContent='Rent month: '+S.month;
+  document.getElementById('view').innerHTML=({dash,rooms,members,rent,menu,maint,visitors,exp,more,enq,past,rules,report,staff,home})[tab]();
+}
+const head=(t,btn)=>`<div class="top"><div style="flex:1"><h2>${t}</h2><div class="sub">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>${btn||''}<button class="btn ghost" data-act="theme" aria-label="Switch light or dark theme">Theme</button></div>`;
+
+function dash(){
+  const t=totals(),pct=t.paid+t.unpaid?Math.round(t.paid/(t.paid+t.unpaid)*100):0;
+  const floors=[...new Set(S.rooms.map(r=>r.floor))].sort((a,b)=>a-b);
+  const map=floors.map(f=>`<div class="floor"><strong>Floor ${f}</strong><div class="rooms">${sortedRooms().filter(r=>r.floor===f).map(r=>{const o=occ(r.id);return`<div class="room"><small>${esc(r.no)} · ${o}/${r.beds}</small><div class="beds">${Array.from({length:r.beds},(_,i)=>`<span class="bed ${i<o?'on':''}"></span>`).join('')}</div></div>`}).join('')}</div></div>`).join('')||'<div class="empty">Add floors and rooms to see the bed map.</div>';
+  const due=S.members.filter(m=>!m.paid),inside=S.visitors.filter(v=>!v.out).length,open=S.tasks.filter(x=>x.status!=='done').length;
+  return head('Dashboard')+`<div class="cards">
+  <div class="card"><b>${t.floors}</b><span>Floors</span></div><div class="card"><b>${t.rooms}</b><span>Rooms</span></div>
+  <div class="card"><b>${t.beds}</b><span>Total beds</span></div><div class="card ok"><b>${t.filled}</b><span>Beds filled</span></div>
+  <div class="card"><b>${t.vacant}</b><span>Beds vacant</span></div><div class="card ok"><b>${t.paid}</b><span>Rent paid</span></div>
+  <div class="card bad"><b>${t.unpaid}</b><span>Rent not paid</span></div><div class="card"><b>${open}</b><span>Open repairs</span></div></div>
+  <div class="panel"><h3>At a glance</h3><div class="donuts">${glance(t)}</div></div><div class="panel"><h3>Bed map</h3>${map}<div class="legend"><span><i class="on"></i>Filled</span><span><i></i>Vacant</span></div></div>
+  <div class="two"><div class="panel"><h3>Money this month</h3><div class="bar"><div style="width:${pct}%"></div></div><div class="split"><span>${pct}% of members paid</span><span>Pending ${inr(t.due)}</span></div>
+  <div style="margin-top:10px"><div class="fin"><span>Rent collected</span><span>${inr(t.got)}</span></div><div class="fin"><span>Expenses and salaries</span><span>${inr(t.spent)}</span></div><div class="fin"><span>Profit so far</span><span>${inr(t.got-t.spent)}</span></div></div></div>
+  <div class="panel"><div class="top" style="margin:0 0 8px"><h3 style="flex:1">Notice board</h3><button class="btn sm" data-act="addNotice">Add notice</button></div>${S.notices.map(n=>`<div class="note"><span>${esc(n.text)}</span><button class="btn danger sm" data-act="delNotice" data-id="${n.id}">Remove</button></div>`).join('')||'<div class="empty">No notices.</div>'}<p class="split">${inside} visitor${inside===1?'':'s'} inside now</p></div></div>
+  <div class="panel"><h3>Rent not paid</h3>${due.length?`<div class="wrap"><table><tr><th>Member</th><th>Phone</th><th>Room</th><th>Due</th><th></th></tr>${due.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(roomOf(m.roomId)?.no||'-')}</td><td>${inr(bal(m))}${lateFee(m)?'<div class="sub">+ '+inr(lateFee(m))+' late fee</div>':''}</td><td><button class="btn sm" data-act="pay" data-id="${m.id}">Record payment</button> <a class="btn ghost sm" target="_blank" rel="noopener" href="${wa(m)}" style="text-decoration:none">WhatsApp reminder</a></td></tr>`).join('')}</table></div>`:'<div class="empty">Everyone has paid this month.</div>'}</div>`;
+}
+
+function rooms(){
+  const floors=[...new Set(S.rooms.map(r=>r.floor))].sort((a,b)=>a-b);
+  return head('Floors & rooms','<button class="btn ghost" data-act="addMember">Add member</button><button class="btn" data-act="addRoom">Add room</button>')+(floors.map(f=>{const rs=sortedRooms().filter(r=>r.floor===f),tb=rs.reduce((a,r)=>a+r.beds,0),tf=rs.reduce((a,r)=>a+occ(r.id),0);return`<div class="panel"><h3>Floor ${f} · ${rs.length} rooms · ${tf}/${tb} beds filled</h3><div class="wrap"><table><tr><th>Room</th><th>Type</th><th>Beds</th><th>Filled</th><th>Vacant</th><th>Rent per bed</th><th>Members</th><th>Add member</th><th></th></tr>${rs.map(r=>{const ms=S.members.filter(m=>m.roomId===r.id);return`<tr><td><b>${esc(r.no)}</b></td><td>${esc(r.type||'-')}</td><td>${r.beds}</td><td>${ms.length}</td><td>${r.beds-ms.length}</td><td>${inr(r.rent)}</td><td>${ms.map(m=>`<span class="chip">${esc(m.name)}<button type="button" class="x" data-act="delMember" data-id="${m.id}" aria-label="Remove ${esc(m.name)}" title="Remove ${esc(m.name)}">×</button></span>`).join('')||'-'}</td><td>${r.beds>ms.length?`<button class="btn sm" data-act="addToRoom" data-id="${r.id}">Add member</button>`:'<button class="btn ghost sm" disabled>Room full</button>'}</td><td><button class="btn danger sm" data-act="delRoom" data-id="${r.id}">Delete</button></td></tr>`}).join('')}</table></div></div>`}).join('')||'<div class="panel empty">No rooms yet. Choose Add room to begin.</div>');
+}
+
+function members(){
+  const list=S.members.filter(m=>(filter==='all'||(filter==='paid')===m.paid)&&(m.name+m.phone).toLowerCase().includes(q.toLowerCase()));
+  return head('Members','<button class="btn" data-act="addMember">Add member</button>')+`<div class="filters"><input id="q" placeholder="Search name or phone" value="${esc(q)}" style="max-width:250px"><select id="flt" style="max-width:170px"><option value="all">All members</option><option value="paid" ${filter==='paid'?'selected':''}>Paid</option><option value="unpaid" ${filter==='unpaid'?'selected':''}>Not paid</option></select></div>
+  <div class="panel wrap">${list.length?`<table><tr><th>Name</th><th>Phone</th><th>Room</th><th>Rent</th><th>Deposit</th><th>Joined</th><th>Status</th><th></th></tr>${list.map(m=>`<tr><td>${esc(m.name)}<div class="sub">${esc(m.food||'')}${m.emerg?' · Emergency: '+esc(m.emerg):''}</div></td><td>${esc(m.phone)}</td><td>${esc(roomOf(m.roomId)?.no||'-')}</td><td>${inr(m.rent)}</td><td>${inr(m.deposit)}</td><td>${esc(m.joined||'-')}</td><td><span class="tag ${m.paid?'paid':'unpaid'}">${m.paid?'Paid':rentPaid(m)>0?'Part paid, '+inr(bal(m))+' due':'Not paid'}</span></td><td style="white-space:nowrap">${m.paid?'':`<button class="btn sm" data-act="pay" data-id="${m.id}">Record payment</button> `}<button class="btn ghost sm" data-act="editMember" data-id="${m.id}">Edit</button> <button class="btn ghost sm" data-act="moveRoom" data-id="${m.id}">Move room</button> <button class="btn ghost sm" data-act="checkout" data-id="${m.id}">Check out</button> <button class="btn danger sm" data-act="delMember" data-id="${m.id}">Remove</button></td></tr>`).join('')}</table>`:'<div class="empty">No members match. Add a member or change the filter.</div>'}</div>`;
+}
+
+function rent(){
+  const months=[...new Set(S.payments.map(p=>p.month).concat(S.month))];
+  const sel=rentMonth||S.month,list=S.payments.filter(p=>p.month===sel).sort((a,b)=>b.date.localeCompare(a.date));
+  return head('Rent & receipts')+`<div class="filters"><select id="rm" style="max-width:220px">${months.map(m=>`<option ${m===sel?'selected':''}>${esc(m)}</option>`).join('')}</select></div><div class="panel wrap">${list.length?`<table><tr><th>Date</th><th>Member</th><th>Room</th><th>Amount</th><th>Mode</th><th></th></tr>${list.map(p=>`<tr><td>${esc(p.date)}</td><td>${esc(p.name)}</td><td>${esc(p.room)}</td><td>${inr(p.amount)}</td><td>${esc(p.mode)}</td><td><button class="btn ghost sm" data-act="receipt" data-id="${p.id}">Receipt</button></td></tr>`).join('')}<tr><td colspan="3"><b>Total collected</b></td><td colspan="3"><b>${inr(list.reduce((a,p)=>a+Number(p.amount),0))}</b></td></tr></table>`:'<div class="empty">No payments recorded for this month.</div>'}</div>`;
+}
+
+function menu(){
+  return head('Weekly food menu')+`<div class="panel wrap"><table><tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr>${DAYS.map(d=>`<tr><td><b>${d}</b></td>${[0,1,2].map(i=>`<td><input data-menu="${d}:${i}" value="${esc((S.menu[d]||[])[i]||'')}"></td>`).join('')}</tr>`).join('')}</table></div><p class="split">Changes save as you type.</p>`;
+}
+
+function maint(){
+  return head('Maintenance','<button class="btn" data-act="addTask">Add request</button>')+`<div class="panel wrap">${S.tasks.length?`<table><tr><th>Date</th><th>Room</th><th>Issue</th><th>Priority</th><th>Status</th><th></th></tr>${S.tasks.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.room)}</td><td>${esc(t.issue)}</td><td><span class="tag ${t.priority}">${t.priority}</span></td><td><select data-status="${t.id}" style="min-width:130px">${['open','in progress','done'].map(s=>`<option ${s===t.status?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="btn danger sm" data-act="delTask" data-id="${t.id}">Delete</button></td></tr>`).join('')}</table>`:'<div class="empty">No maintenance requests.</div>'}</div>`;
+}
+
+function visitors(){
+  return head('Visitors','<button class="btn" data-act="addVisitor">Log visitor</button>')+`<div class="panel wrap">${S.visitors.length?`<table><tr><th>Date</th><th>Visitor</th><th>Visiting</th><th>In</th><th>Status</th><th></th></tr>${S.visitors.map(v=>`<tr><td>${esc(v.date)}</td><td>${esc(v.name)}</td><td>${esc(v.to)}</td><td>${esc(v.inTime)}</td><td><span class="tag ${v.out?'out':'in'}">${v.out?'Left at '+esc(v.out):'Inside'}</span></td><td>${v.out?'':`<button class="btn sm" data-act="visOut" data-id="${v.id}">Mark left</button> `}<button class="btn danger sm" data-act="delVisitor" data-id="${v.id}">Delete</button></td></tr>`).join('')}</table>`:'<div class="empty">No visitors logged.</div>'}</div>`;
+}
+
+function exp(){
+  const tot=S.expenses.reduce((a,e)=>a+Number(e.amount),0);
+  return head('Expenses','<button class="btn" data-act="addExp">Add expense</button>')+`<div class="panel wrap">${S.expenses.length?`<table><tr><th>Date</th><th>Category</th><th>Note</th><th>Amount</th><th></th></tr>${S.expenses.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.cat)}</td><td>${esc(e.note)}</td><td>${inr(e.amount)}</td><td><button class="btn danger sm" data-act="delExp" data-id="${e.id}">Delete</button></td></tr>`).join('')}<tr><td colspan="3"><b>Total</b></td><td colspan="2"><b>${inr(tot)}</b></td></tr></table>`:'<div class="empty">No expenses yet. Add electricity, groceries, salaries and repairs.</div>'}</div>`;
+}
+
+function more(){
+  return head('Backup & settings')+`<div class="panel"><h3>This month</h3><p>Rent month is <b>${esc(S.month)}</b>. Start a new month to mark everyone as not paid. Old payments and receipts stay in Rent & receipts.</p><div class="top"><button class="btn" data-act="newMonth">Start new rent month</button><button class="btn ghost" data-act="rename">Rename PG</button><button class="btn ghost" data-act="rentRules">Due date & late fee</button></div></div>
+  <div class="panel"><h3>Backup</h3><p>Copy your data as text and keep it safe, or paste a backup to restore it.</p><div class="top"><button class="btn ghost" data-act="backup">Backup or restore</button><button class="btn danger" data-act="reset">Reset to sample data</button></div></div>`;
+}
+
+/* dialogs */
+const dlg=document.getElementById('dlg'),dform=document.getElementById('dform');
+function form(title,html,ok,submit){
+  dform.innerHTML=`<h2>${title}</h2>${html}<div class="actions"><button type="button" class="btn ghost" id="cancel">Cancel</button>${ok?`<button class="btn" type="submit">${ok}</button>`:''}</div>`;
+  dform.onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(dform));f.paid=dform.elements.paid?dform.elements.paid.checked:false;if(submit&&submit(f)!==false){save();dlg.close();render()}};
+  document.getElementById('cancel').onclick=()=>dlg.close();dlg.showModal();
+}
+const roomOpts=sel=>sortedRooms().map(r=>{const o=occ(r.id),full=o>=r.beds&&r.id!==sel;return`<option value="${r.id}" ${r.id===sel?'selected':''} ${full?'disabled':''}>Floor ${r.floor} · Room ${esc(r.no)} (${r.beds-o} free)</option>`}).join('');
+function recordPay(m,f){m.paid=true;S.payments=S.payments.filter(p=>!(p.memberId===m.id&&p.month===S.month));S.payments.push({id:uid(),memberId:m.id,name:m.name,room:roomOf(m.roomId)?.no||'-',month:S.month,amount:+f.amount,date:f.date,mode:f.mode})}
+function memberForm(m,rid){
+  if(!S.rooms.length){notify('Add a room first, then you can add members.');return}
+  if(!m&&!rid&&!S.rooms.some(r=>occ(r.id)<r.beds)){notify('All beds are full. Add a new room first.');return}
+  const x=m||{name:'',phone:'',roomId:rid||(sortedRooms().find(r=>occ(r.id)<r.beds)||S.rooms[0]).id,rent:'',deposit:'',joined:today(),food:'Veg'};
+  form(m?'Edit member':'Add member',`<label>Name<input name="name" required value="${esc(x.name)}"></label><label>Phone<input name="phone" value="${esc(x.phone)}" inputmode="tel"></label><label>Room<select name="roomId">${roomOpts(x.roomId)}</select></label><div class="grid2"><label>Monthly rent (₹)<input name="rent" type="number" min="0" required value="${esc(x.rent)}"></label><label>Security deposit (₹)<input name="deposit" type="number" min="0" value="${esc(x.deposit)}"></label></div><label>Joined on<input name="joined" type="date" value="${esc(x.joined)}"></label><div class="grid2"><label>Food preference<select name="food">${['Veg','Non-veg'].map(o=>`<option ${o===x.food?'selected':''}>${o}</option>`).join('')}</select></label><label>Emergency contact<input name="emerg" value="${esc(x.emerg||'')}" inputmode="tel"></label></div><label>ID proof (type and number)<input name="idp" value="${esc(x.idp||'')}"></label>`,m?'Save changes':'Add member',f=>{
+    const d={name:f.name,phone:f.phone,roomId:f.roomId,rent:+f.rent,deposit:+f.deposit||0,joined:f.joined,food:f.food,emerg:f.emerg,idp:f.idp};
+    if(m)Object.assign(m,d);else S.members.push(Object.assign({id:uid(),paid:false},d))});
+}
+const A={
+  addRoom:()=>form('Add room',`<div class="grid2"><label>Floor<input name="floor" type="number" min="0" required value="1"></label><label>Room number<input name="no" required></label><label>Number of beds<input name="beds" type="number" min="1" required value="2"></label><label>Rent per bed (₹)<input name="rent" type="number" min="0" required></label></div><label>Type<select name="type"><option>Non-AC</option><option>AC</option></select></label>`,'Add room',f=>{if(S.rooms.some(r=>r.no===f.no.trim())){notify('Room '+f.no.trim()+' already exists. Use a different room number.');return false}S.rooms.push({id:uid(),floor:+f.floor,no:f.no.trim(),beds:+f.beds,rent:+f.rent,type:f.type})}),
+  delRoom:id=>{if(occ(id)){notify('Remove the members in this room first, using the × beside each name.');return}ask('Delete this room?',()=>{S.rooms=S.rooms.filter(r=>r.id!==id)})},
+  addMember:()=>memberForm(),
+  editMember:id=>memberForm(S.members.find(m=>m.id===id)),
+  delMember:id=>ask('Remove this member? This cannot be undone.',()=>{S.members=S.members.filter(m=>m.id!==id)}),
+  pay:id=>{const m=S.members.find(m=>m.id===id);form('Record rent payment',`<p>${esc(m.name)} · ${esc(S.month)}</p><div class="grid2"><label>Amount (₹)<input name="amount" type="number" required value="${m.rent}"></label><label>Date<input name="date" type="date" value="${today()}"></label></div><label>Payment mode<select name="mode"><option>UPI</option><option>Cash</option><option>Bank transfer</option></select></label>`,'Save payment',f=>recordPay(m,f))},
+  receipt:id=>{const p=S.payments.find(p=>p.id===id);form('Rent receipt',`<div class="rcpt"><p><span>PG</span><b>${esc(S.name)}</b></p><p><span>Receipt no.</span><b>${esc(p.id.toUpperCase())}</b></p><p><span>Received from</span><b>${esc(p.name)}</b></p><p><span>Room</span><b>${esc(p.room)}</b></p><p><span>For month</span><b>${esc(p.month)}</b></p><p><span>Amount</span><b>${inr(p.amount)}</b></p><p><span>Date and mode</span><b>${esc(p.date)} · ${esc(p.mode)}</b></p></div>`,'',null);dform.querySelector('.actions').insertAdjacentHTML('afterbegin','<button type="button" class="btn" onclick="window.print()">Print</button>')},
+  addTask:()=>form('Add maintenance request',`<label>Room (or Common)<input name="room" required value="Common"></label><label>Issue<textarea name="issue" rows="2" required></textarea></label><label>Priority<select name="priority"><option>low</option><option selected>medium</option><option>high</option></select></label>`,'Add request',f=>{S.tasks.unshift({id:uid(),room:f.room,issue:f.issue,priority:f.priority,status:'open',date:today()})}),
+  delTask:id=>{S.tasks=S.tasks.filter(t=>t.id!==id);save();render()},
+  addVisitor:()=>form('Log visitor',`<label>Visitor name<input name="name" required></label><label>Visiting member<select name="to">${S.members.map(m=>`<option>${esc(m.name)}</option>`).join('')}</select></label><label>Time in<input name="t" type="time" required value="${new Date().toTimeString().slice(0,5)}"></label>`,'Log visitor',f=>{S.visitors.unshift({id:uid(),name:f.name,to:f.to,date:today(),inTime:f.t,out:''})}),
+  visOut:id=>{S.visitors.find(v=>v.id===id).out=new Date().toTimeString().slice(0,5);save();render()},
+  delVisitor:id=>{S.visitors=S.visitors.filter(v=>v.id!==id);save();render()},
+  addExp:()=>form('Add expense',`<label>Category<select name="cat">${['Electricity','Water','Groceries','Salaries','Repairs','Internet','Other'].map(c=>`<option>${c}</option>`).join('')}</select></label><div class="grid2"><label>Amount (₹)<input name="amount" type="number" min="0" required></label><label>Date<input name="date" type="date" value="${today()}"></label></div><label>Note<input name="note"></label>`,'Add expense',f=>{S.expenses.unshift({id:uid(),cat:f.cat,amount:+f.amount,date:f.date,note:f.note,month:S.month})}),
+  delExp:id=>{S.expenses=S.expenses.filter(e=>e.id!==id);save();render()},
+  addNotice:()=>form('Add notice',`<label>Notice<textarea name="text" rows="3" required></textarea></label>`,'Post notice',f=>{S.notices.unshift({id:uid(),text:f.text})}),
+  delNotice:id=>{S.notices=S.notices.filter(n=>n.id!==id);save();render()},
+  newMonth:()=>ask('Mark every member as not paid for a new month?',()=>{S.members.forEach(m=>m.paid=false);S.month=monthName();rentMonth=''}),
+  rename:()=>form('Rename PG',`<label>PG name<input name="name" required value="${esc(S.name)}"></label>`,'Save',f=>{S.name=f.name}),
+  backup:()=>{form('Backup or restore',`<label>Your data. Copy it to back up, or paste a backup here and restore.<textarea name="data" rows="8">${esc(JSON.stringify(S))}</textarea></label>`,'Restore from text',f=>{try{const o=JSON.parse(f.data);if(!o.rooms||!o.members)throw 0;S=o}catch(e){notify('That text is not a valid backup.');return false}})},
+  reset:()=>ask('Replace all your data with sample data?',()=>{S=seed()})
+};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;render();window.scrollTo(0,0);return}
+  const a=e.target.closest('[data-act]');if(a)A[a.dataset.act](a.dataset.id);
+});
+document.addEventListener('input',e=>{
+  if(e.target.dataset.menu){const[d,i]=e.target.dataset.menu.split(':');(S.menu[d]=S.menu[d]||['','',''])[+i]=e.target.value;save()}
+  if(e.target.id==='q'){q=e.target.value;const p=e.target.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(p,p)}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='flt'){filter=e.target.value;render()}
+  if(e.target.id==='rm'){rentMonth=e.target.value;render()}
+  if(e.target.dataset.status){S.tasks.find(t=>t.id===e.target.dataset.status).status=e.target.value;save();render()}
+});
+const pc=(a,b)=>b?Math.round(a/b*100):0;
+const donut=(p,c,l,s)=>`<div class="donut"><div class="ring" style="background:conic-gradient(${c} ${p*3.6}deg,var(--line) 0)"><span>${p}%</span></div><div><b>${l}</b><div class="sub">${s}</div></div></div>`;
+function glance(t){
+  const done=S.tasks.filter(x=>x.status==='done').length,fm=S.members.filter(m=>m.food).length,veg=S.members.filter(m=>m.food==='Veg').length;
+  return donut(pc(t.filled,t.beds),'var(--brand)','Occupancy',t.filled+' of '+t.beds+' beds filled')+donut(pc(t.paid,t.paid+t.unpaid),'var(--ok)','Rent collected',inr(t.got)+' received')+donut(pc(done,S.tasks.length),'var(--warn)','Repairs done',done+' of '+S.tasks.length+' requests')+donut(pc(veg,fm),'#8b5cf6','Veg members',fm?veg+' veg, '+(fm-veg)+' non-veg':'Set food preference in member profile');
+}
+const wa=m=>'https://wa.me/91'+String(m.phone||'').replace(/\D/g,'').slice(-10)+'?text='+encodeURIComponent('Hello '+m.name+', this is a reminder that your rent of '+inr(bal(m)+lateFee(m))+' for '+S.month+' at '+S.name+' is pending. Please pay at your earliest convenience. Thank you.');
+function enq(){
+  S.enquiries=S.enquiries||[];
+  return head('Enquiries','<button class="btn" data-act="addEnq">Add enquiry</button>')+`<p class="sub">Vacant beds right now: <b>${totals().vacant}</b></p><div class="panel wrap">${S.enquiries.length?`<table><tr><th>Date</th><th>Name</th><th>Phone</th><th>Wants</th><th>Budget</th><th>Status</th><th></th></tr>${S.enquiries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.name)}<div class="sub">${esc(e.note)}</div></td><td>${esc(e.phone)}</td><td>${esc(e.want)}</td><td>${e.budget?inr(e.budget):'-'}</td><td><select data-enq="${e.id}">${['new','visited','booked','dropped'].map(s=>`<option ${s===e.status?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="btn danger sm" data-act="delEnq" data-id="${e.id}">Delete</button></td></tr>`).join('')}</table>`:'<div class="empty">No enquiries yet. Log calls and walk-ins here so you can follow up when a bed is free.</div>'}</div>`;
+}
+function past(){
+  S.past=S.past||[];
+  return head('Past members')+`<div class="panel wrap">${S.past.length?`<table><tr><th>Name</th><th>Phone</th><th>Room</th><th>Stay</th><th>Deposit</th><th>Refunded</th></tr>${S.past.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.phone)}</td><td>${esc(p.room)}</td><td>${esc(p.joined||'-')} to ${esc(p.left)}</td><td>${inr(p.deposit)}</td><td>${inr(p.refund)}</td></tr>`).join('')}</table>`:'<div class="empty">No one has checked out yet.</div>'}</div>`;
+}
+Object.assign(A,{
+  theme:()=>{const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'},
+  checkout:id=>{const m=S.members.find(m=>m.id===id);form('Check out member',`<p><b>${esc(m.name)}</b> · deposit held ${inr(m.deposit)}</p><div class="grid2"><label>Deposit refunded (₹)<input name="refund" type="number" min="0" value="${m.deposit||0}"></label><label>Check-out date<input name="left" type="date" value="${today()}"></label></div>`,'Check out',f=>{S.past=S.past||[];S.past.unshift({name:m.name,phone:m.phone,room:roomOf(m.roomId)?.no||'-',joined:m.joined,left:f.left,deposit:m.deposit||0,refund:+f.refund||0});S.members=S.members.filter(x=>x.id!==id)})},
+  addEnq:()=>form('Add enquiry',`<label>Name<input name="name" required></label><div class="grid2"><label>Phone<input name="phone" inputmode="tel"></label><label>Budget (₹ per month)<input name="budget" type="number" min="0"></label></div><label>Wants<select name="want"><option>Any room</option><option>AC</option><option>Non-AC</option></select></label><label>Note<input name="note"></label>`,'Add enquiry',f=>{S.enquiries=S.enquiries||[];S.enquiries.unshift({id:uid(),name:f.name,phone:f.phone,budget:+f.budget||0,want:f.want,note:f.note,status:'new',date:today()})}),
+  delEnq:id=>{S.enquiries=S.enquiries.filter(e=>e.id!==id);save();render()}
+});
+document.addEventListener('change',e=>{if(e.target.dataset.enq){S.enquiries.find(x=>x.id===e.target.dataset.enq).status=e.target.value;save()}});
+function notify(msg){
+  if(dlg.open){let e=dform.querySelector('.err');if(!e){e=document.createElement('p');e.className='err';e.setAttribute('role','alert');dform.prepend(e)}e.textContent=msg;return}
+  let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
+  t.textContent=msg;t.style.display='block';clearTimeout(notify.h);notify.h=setTimeout(()=>{t.style.display='none'},3500);
+}
+function ask(msg,yes){form('Please confirm','<p>'+esc(msg)+'</p>','Yes, continue',()=>{yes()})}
+Object.assign(A,{addToRoom:id=>memberForm(null,id)});
+const RCATS=['General','Timings','Rent & payments','Visitors','Safety & conduct','Facilities'];
+const DEFAULT_RULES=[['Timings','Main gate closes at 10:30 PM. Inform the warden in advance if you will return late.'],['Timings','Quiet hours are 10:00 PM to 6:00 AM. Keep music and phone calls low.'],['Rent & payments','Rent must be paid on or before the 5th of every month.'],['Rent & payments','The security deposit is refunded at check-out after room inspection and clearing all dues.'],['Rent & payments','Give 30 days’ notice before vacating the PG.'],['Visitors','Visitors are allowed only in the common area between 9:00 AM and 7:00 PM. No overnight guests.'],['Safety & conduct','Smoking, alcohol and drugs are strictly not allowed inside the premises.'],['Safety & conduct','Keep your room locked when you go out. The PG is not responsible for lost valuables.'],['Facilities','Switch off lights, fans and the AC when leaving the room.'],['Facilities','Keep your room and common areas clean. Dispose of waste only in the dustbins.'],['Facilities','Report any damage or repair need on the same day. Damage caused by a member is charged to that member.']];
+const defRules=()=>DEFAULT_RULES.map(([cat,text])=>({id:uid(),cat,text}));
+function rules(){
+  if(!S.rules){S.rules=defRules();save()}
+  const groups=RCATS.map(c=>[c,S.rules.filter(r=>r.cat===c)]).filter(g=>g[1].length);
+  return head('PG rules','<button class="btn" data-act="addRule">Add rule</button>')+(groups.map(([c,rs])=>`<div class="panel"><h3>${esc(c)}</h3><ol class="rules">${rs.map(r=>`<li><div><span>${esc(r.text)}</span><span class="rl"><button class="btn ghost sm" data-act="editRule" data-id="${r.id}">Edit</button><button class="btn danger sm" data-act="delRule" data-id="${r.id}">Delete</button></span></div></li>`).join('')}</ol></div>`).join('')||'<div class="panel empty">No rules yet. Add a rule or restore the default rules.</div>')+'<div style="margin-top:8px"><button class="btn ghost" data-act="defRules">Restore default rules</button></div>';
+}
+function ruleForm(r){
+  form(r?'Edit rule':'Add rule',`<label>Category<select name="cat">${RCATS.map(c=>`<option ${r&&r.cat===c?'selected':''}>${c}</option>`).join('')}</select></label><label>Rule<textarea name="text" rows="3" required>${esc(r?r.text:'')}</textarea></label>`,r?'Save rule':'Add rule',f=>{if(r){r.cat=f.cat;r.text=f.text.trim()}else S.rules.push({id:uid(),cat:f.cat,text:f.text.trim()})});
+}
+Object.assign(A,{
+  addRule:()=>ruleForm(),
+  editRule:id=>ruleForm(S.rules.find(r=>r.id===id)),
+  delRule:id=>ask('Delete this rule?',()=>{S.rules=S.rules.filter(r=>r.id!==id)}),
+  defRules:()=>ask('Replace all rules with the default list?',()=>{S.rules=defRules()})
+});
+const rentPaid=m=>S.payments.filter(p=>p.memberId===m.id&&p.month===S.month).reduce((a,p)=>a+Number(p.amount)-Number(p.fee||0),0);
+const bal=m=>m.paid?0:Math.max(0,Number(m.rent)-rentPaid(m));
+const lateDays=()=>S.month===monthName()?Math.max(0,new Date().getDate()-(S.dueDay||5)):0;
+const lateFee=m=>bal(m)>0?lateDays()*(S.lateFee==null?50:S.lateFee):0;
+function recordPay(m,f){S.payments.push({id:uid(),memberId:m.id,name:m.name,room:roomOf(m.roomId)?.no||'-',month:S.month,amount:+f.amount,fee:+f.fee||0,date:f.date,mode:f.mode});m.paid=rentPaid(m)>=Number(m.rent)}
+function totals(){
+  const beds=S.rooms.reduce((a,r)=>a+Number(r.beds),0),filled=S.members.length;
+  const paid=S.members.filter(m=>m.paid),unpaid=S.members.filter(m=>!m.paid);
+  const spent=S.expenses.filter(e=>(e.month||S.month)===S.month).reduce((a,e)=>a+Number(e.amount),0)+(S.salaries||[]).filter(s=>s.month===S.month).reduce((a,s)=>a+Number(s.amount),0);
+  return{floors:new Set(S.rooms.map(r=>r.floor)).size,rooms:S.rooms.length,beds,filled,vacant:beds-filled,paid:paid.length,unpaid:unpaid.length,got:S.members.reduce((a,m)=>a+(m.paid?Number(m.rent):rentPaid(m)),0),due:unpaid.reduce((a,m)=>a+bal(m),0),spent};
+}
+function report(){
+  const m={};
+  S.payments.forEach(p=>{(m[p.month]=m[p.month]||{in:0,out:0}).in+=Number(p.amount)-Number(p.fee||0)});
+  S.expenses.forEach(e=>{const k=e.month||S.month;(m[k]=m[k]||{in:0,out:0}).out+=Number(e.amount)});
+  (S.salaries||[]).forEach(s=>{(m[s.month]=m[s.month]||{in:0,out:0}).out+=Number(s.amount)});
+  if(!m[S.month])m[S.month]={in:0,out:0};
+  const ks=Object.keys(m).sort((a,b)=>new Date('1 '+a)-new Date('1 '+b)),mx=Math.max(1,...ks.flatMap(k=>[m[k].in,m[k].out])),fees=S.payments.reduce((a,p)=>a+Number(p.fee||0),0);
+  const h=v=>v?Math.max(3,v/mx*100):0;
+  return head('Monthly report')+`<div class="panel"><h3>Rent collected and expenses by month</h3><div class="chart">${ks.map(k=>`<div class="col"><div class="bars"><i class="b in" style="height:${h(m[k].in)}%" title="Rent ${inr(m[k].in)}"></i><i class="b out" style="height:${h(m[k].out)}%" title="Expenses ${inr(m[k].out)}"></i></div><small>${esc(k.slice(0,3))} ${esc(k.slice(-2))}</small></div>`).join('')}</div><div class="legend"><span><i class="lg" style="background:var(--ok)"></i>Rent collected</span><span><i class="lg" style="background:var(--bad)"></i>Expenses</span></div></div><div class="panel wrap"><table><tr><th>Month</th><th>Rent collected</th><th>Expenses</th><th>Profit</th></tr>${ks.map(k=>`<tr><td>${esc(k)}</td><td>${inr(m[k].in)}</td><td>${inr(m[k].out)}</td><td><b style="color:var(--${m[k].in-m[k].out>=0?'ok':'bad'})">${inr(m[k].in-m[k].out)}</b></td></tr>`).join('')}</table><p class="sub">Late fees collected so far: ${inr(fees)}. Earlier months appear here each time you start a new rent month.</p></div>`;
+}
+Object.assign(A,{
+  moveRoom:id=>{const m=S.members.find(x=>x.id===id),opts=sortedRooms().filter(r=>r.id!==m.roomId&&occ(r.id)<r.beds);if(!opts.length){notify('No other room has a free bed.');return}
+    form('Move to another room',`<p><b>${esc(m.name)}</b> is now in room ${esc(roomOf(m.roomId)?.no||'-')}</p><label>New room<select name="roomId">${opts.map(r=>`<option value="${r.id}">Floor ${r.floor} · Room ${esc(r.no)} (${r.beds-occ(r.id)} free, ${inr(r.rent)} per bed)</option>`).join('')}</select></label><label class="check"><input type="checkbox" name="newrent"> Change rent to the new room rent</label>`,'Move member',f=>{m.roomId=f.roomId;if(f.newrent)m.rent=roomOf(f.roomId).rent})},
+  rentRules:()=>form('Due date and late fee',`<div class="grid2"><label>Rent due day of month<input name="dueDay" type="number" min="1" max="28" required value="${S.dueDay||5}"></label><label>Late fee per day (₹)<input name="lateFee" type="number" min="0" required value="${S.lateFee==null?50:S.lateFee}"></label></div><p class="sub">The late fee is suggested when you record a payment after the due day. You can change it each time.</p>`,'Save',f=>{S.dueDay=+f.dueDay;S.lateFee=+f.lateFee}),
+  pay:id=>{const m=S.members.find(x=>x.id===id),b=bal(m),fee=lateFee(m);
+    form('Record rent payment',`<p><b>${esc(m.name)}</b> · ${esc(S.month)}</p><p class="sub">Rent ${inr(m.rent)} · paid so far ${inr(rentPaid(m))} · balance ${inr(b)}${fee?' · late fee suggested '+inr(fee)+' ('+lateDays()+' days late)':''}</p><div class="grid2"><label>Amount received (₹)<input name="amount" type="number" min="1" required value="${b+fee}"></label><label>Late fee included (₹)<input name="fee" type="number" min="0" value="${fee}"></label></div><div class="grid2"><label>Date<input name="date" type="date" value="${today()}"></label><label>Payment mode<select name="mode"><option>UPI</option><option>Cash</option><option>Bank transfer</option></select></label></div><p class="sub">Enter less than the balance for a part payment. The member stays unpaid until the full rent is received.</p>`,'Save payment',f=>{if(+f.fee>+f.amount){notify('Late fee cannot be more than the amount received.');return false}recordPay(m,f)})},
+  receipt:id=>{const p=S.payments.find(x=>x.id===id),fee=Number(p.fee||0);form('Rent receipt',`<div class="rcpt"><p><span>PG</span><b>${esc(S.name)}</b></p><p><span>Receipt no.</span><b>${esc(p.id.toUpperCase())}</b></p><p><span>Received from</span><b>${esc(p.name)}</b></p><p><span>Room</span><b>${esc(p.room)}</b></p><p><span>For month</span><b>${esc(p.month)}</b></p><p><span>Rent paid</span><b>${inr(Number(p.amount)-fee)}</b></p>${fee?`<p><span>Late fee</span><b>${inr(fee)}</b></p>`:''}<p><span>Total received</span><b>${inr(p.amount)}</b></p><p><span>Date and mode</span><b>${esc(p.date)} · ${esc(p.mode)}</b></p></div>`,'',null);dform.querySelector('.actions').insertAdjacentHTML('afterbegin','<button type="button" class="btn" onclick="window.print()">Print</button>')}
+});
+const salPaid=s=>(S.salaries||[]).filter(x=>x.staffId===s.id&&x.month===S.month).reduce((a,x)=>a+Number(x.amount),0);
+function staff(){
+  if(!S.staff){S.staff=[{id:uid(),name:'Lakshmi',role:'Cook',phone:'',salary:15000,joined:'2026-01-01'},{id:uid(),name:'Raju',role:'Cleaner',phone:'',salary:8000,joined:'2026-01-01'},{id:uid(),name:'Venkat',role:'Security',phone:'',salary:10000,joined:'2026-01-01'}];save()}
+  S.salaries=S.salaries||[];
+  const sal=S.staff.reduce((a,s)=>a+Number(s.salary),0),paid=S.staff.reduce((a,s)=>a+salPaid(s),0),pend=S.staff.reduce((a,s)=>a+Math.max(0,Number(s.salary)-salPaid(s)),0);
+  const hist=[...S.salaries].sort((a,b)=>b.date.localeCompare(a.date));
+  const rows=S.staff.map(s=>{const p=salPaid(s),ok=p>=Number(s.salary);return`<tr><td>${esc(s.name)}<div class="sub">${esc(s.role)}${s.phone?' · '+esc(s.phone):''}</div></td><td>${inr(s.salary)}</td><td>${inr(p)}</td><td>${inr(Math.max(0,Number(s.salary)-p))}</td><td><span class="tag ${ok?'paid':'unpaid'}">${ok?'Paid':p>0?'Part paid':'Not paid'}</span></td><td style="white-space:nowrap"><button class="btn sm" data-act="paySalary" data-id="${s.id}">Pay salary</button> <button class="btn ghost sm" data-act="editStaff" data-id="${s.id}">Edit</button> <button class="btn danger sm" data-act="delStaff" data-id="${s.id}">Remove</button></td></tr>`}).join('');
+  return head('Staff & salary','<button class="btn" data-act="addStaff">Add staff</button>')+`<div class="cards"><div class="card"><b>${S.staff.length}</b><span>Staff members</span></div><div class="card"><b>${inr(sal)}</b><span>Monthly salary total</span></div><div class="card ok"><b>${inr(paid)}</b><span>Paid for ${esc(S.month)}</span></div><div class="card bad"><b>${inr(pend)}</b><span>Salary pending</span></div></div>
+  <div class="panel wrap"><h3>Staff for ${esc(S.month)}</h3>${S.staff.length?`<table><tr><th>Name</th><th>Monthly salary</th><th>Paid</th><th>Balance</th><th>Status</th><th></th></tr>${rows}</table>`:'<div class="empty">No staff yet. Add your cook, cleaner, warden or security.</div>'}</div>
+  <div class="panel wrap"><h3>Salary payments</h3>${hist.length?`<table><tr><th>Date</th><th>For month</th><th>Staff</th><th>Amount</th><th>Mode</th><th>Note</th><th></th></tr>${hist.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.month)}</td><td>${esc(x.name)}</td><td>${inr(x.amount)}</td><td>${esc(x.mode)}</td><td>${esc(x.note||'')}</td><td><button class="btn danger sm" data-act="delSalary" data-id="${x.id}">Delete</button></td></tr>`).join('')}</table>`:'<div class="empty">No salary paid yet. Use Pay salary beside a staff member.</div>'}</div><p class="sub">Salaries paid are counted as expenses on the dashboard and in the Monthly report.</p>`;
+}
+function staffForm(s){
+  const x=s||{name:'',role:'Cook',phone:'',salary:'',joined:today()};
+  form(s?'Edit staff':'Add staff',`<label>Name<input name="name" required value="${esc(x.name)}"></label><div class="grid2"><label>Role<select name="role">${['Cook','Cleaner','Warden','Security','Manager','Other'].map(r=>`<option ${r===x.role?'selected':''}>${r}</option>`).join('')}</select></label><label>Phone<input name="phone" inputmode="tel" value="${esc(x.phone)}"></label></div><div class="grid2"><label>Monthly salary (₹)<input name="salary" type="number" min="0" required value="${esc(x.salary)}"></label><label>Joined on<input name="joined" type="date" value="${esc(x.joined)}"></label></div>`,s?'Save changes':'Add staff',f=>{const d={name:f.name,role:f.role,phone:f.phone,salary:+f.salary,joined:f.joined};if(s)Object.assign(s,d);else S.staff.push(Object.assign({id:uid()},d))});
+}
+Object.assign(A,{
+  addStaff:()=>staffForm(),
+  editStaff:id=>staffForm(S.staff.find(s=>s.id===id)),
+  delStaff:id=>ask('Remove this staff member? Their past salary payments stay in the list.',()=>{S.staff=S.staff.filter(s=>s.id!==id)}),
+  delSalary:id=>ask('Delete this salary payment?',()=>{S.salaries=S.salaries.filter(x=>x.id!==id)}),
+  paySalary:id=>{const s=S.staff.find(x=>x.id===id),p=salPaid(s),b=Math.max(0,Number(s.salary)-p);
+    form('Pay salary',`<p><b>${esc(s.name)}</b> · ${esc(s.role)} · ${esc(S.month)}</p><p class="sub">Salary ${inr(s.salary)} · paid ${inr(p)} · balance ${inr(b)}</p><div class="grid2"><label>Amount (₹)<input name="amount" type="number" min="1" required value="${b||''}"></label><label>Date<input name="date" type="date" value="${today()}"></label></div><div class="grid2"><label>Mode<select name="mode"><option>Cash</option><option>UPI</option><option>Bank transfer</option></select></label><label>Note<input name="note" placeholder="Advance, bonus, full salary"></label></div>`,'Save payment',f=>{S.salaries.push({id:uid(),staffId:s.id,name:s.name,month:S.month,amount:+f.amount,date:f.date,mode:f.mode,note:f.note})})}
+});
+const DEF_FAC=['Wi-Fi internet','Home-style meals, three times a day','Laundry service','CCTV and security','Power backup','Daily housekeeping'];
+function home(){
+  const t=totals(),c=S.contact||{},fac=S.facilities||DEF_FAC,rl=(S.rules||defRules()).slice(0,5);
+  const day=DAYS[(new Date().getDay()+6)%7],mn=S.menu[day]||['','',''];
+  const types=['AC','Non-AC'].map(ty=>{const rs=S.rooms.filter(r=>(r.type||'Non-AC')===ty);if(!rs.length)return'';const free=rs.reduce((a,r)=>a+r.beds-occ(r.id),0),from=Math.min(...rs.map(r=>Number(r.rent)));return`<div class="tcard"><h3>${ty} rooms</h3><div class="price">${inr(from)}<small> per bed each month, from</small></div><p class="sub">${rs.length} rooms · ${free} bed${free===1?'':'s'} available</p><button class="btn ghost sm" data-act="enquire">Ask about ${ty}</button></div>`}).join('')||'<div class="tcard">Rooms will appear here once you add them.</div>';
+  const wa=String(c.phone||'').replace(/\D/g,'').slice(-10);
+  return`<section class="hero"><div class="hnav"><b>${esc(S.name)}</b><button class="btn ghost" data-tab="dash">Admin dashboard</button></div><h1>Safe, clean and comfortable living at ${esc(S.name)}</h1><p>Furnished rooms, home-style food and friendly management, close to everything you need.</p><div class="hcta"><button class="btn big" data-act="enquire">Book a bed</button><button class="btn big ghost" data-tab="rooms">View rooms</button></div><div class="hstats"><div><b>${t.vacant}</b><span>Beds available now</span></div><div><b>${t.rooms}</b><span>Rooms</span></div><div><b>${t.floors}</b><span>Floors</span></div><div><b>3</b><span>Meals every day</span></div></div></section>
+  <div class="sec"><h2>Rooms and rent</h2><p>Pick the room type that suits you.</p></div><div class="tgrid">${types}</div>
+  <div class="sec"><div class="top" style="border:0;margin:0;padding:0"><div style="flex:1"><h2>Facilities</h2><p>What you get with every bed.</p></div><button class="btn ghost sm" data-act="editFac">Edit facilities</button></div></div><div class="tgrid">${fac.map(f=>`<div class="fac">${esc(f)}</div>`).join('')}</div>
+  <div class="sec"><h2>Today’s menu</h2><p>${day}</p></div><div class="tgrid">${['Breakfast','Lunch','Dinner'].map((n,i)=>`<div class="tcard"><h3>${n}</h3><p style="margin:8px 0 0">${esc(mn[i]||'Not set')}</p></div>`).join('')}</div>
+  <div class="sec"><h2>House rules</h2><p>A few basics that keep the PG comfortable for everyone.</p></div><div class="panel"><ul style="margin:0;padding-left:20px">${rl.map(r=>`<li style="margin:6px 0">${esc(r.text)}</li>`).join('')||'<li>No rules added yet.</li>'}</ul></div>
+  <div class="sec"><h2>Contact</h2></div><div class="panel">${c.phone||c.address||c.email?`<p style="margin:0 0 6px"><b>${esc(S.name)}</b></p>${c.address?`<p style="margin:4px 0">${esc(c.address)}</p>`:''}${c.phone?`<p style="margin:4px 0">Phone: ${esc(c.phone)}</p>`:''}${c.email?`<p style="margin:4px 0">Email: ${esc(c.email)}</p>`:''}${c.hours?`<p style="margin:4px 0">Visiting hours: ${esc(c.hours)}</p>`:''}`:'<p style="margin:0 0 8px">Add your phone number and address so guests can reach you.</p>'}<div class="hcta" style="margin-top:12px"><button class="btn" data-act="enquire">Send an enquiry</button>${wa?`<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/91${wa}" style="text-decoration:none">Chat on WhatsApp</a>`:''}<button class="btn ghost" data-act="editContact">Edit contact details</button></div></div>
+  <div class="sitefoot">${esc(S.name)} · Enquiries sent from this page are saved in your Enquiries list.</div>`;
+}
+Object.assign(A,{
+  enquire:()=>form('Book a bed or ask a question',`<label>Your name<input name="name" required></label><div class="grid2"><label>Phone<input name="phone" inputmode="tel" required></label><label>Budget (₹ per month)<input name="budget" type="number" min="0"></label></div><label>Room type<select name="want"><option>Any room</option><option>AC</option><option>Non-AC</option></select></label><label>Message<textarea name="note" rows="2"></textarea></label>`,'Send enquiry',f=>{S.enquiries=S.enquiries||[];S.enquiries.unshift({id:uid(),name:f.name,phone:f.phone,budget:+f.budget||0,want:f.want,note:f.note,status:'new',date:today()});setTimeout(()=>notify('Enquiry saved. You can follow it up in the Enquiries page.'),60)}),
+  editContact:()=>{const c=S.contact||{};form('Contact details',`<label>Phone<input name="phone" inputmode="tel" value="${esc(c.phone||'')}"></label><label>Email<input name="email" type="email" value="${esc(c.email||'')}"></label><label>Address<textarea name="address" rows="2">${esc(c.address||'')}</textarea></label><label>Visiting hours<input name="hours" value="${esc(c.hours||'')}" placeholder="9:00 AM to 7:00 PM"></label>`,'Save',f=>{S.contact={phone:f.phone,email:f.email,address:f.address,hours:f.hours}})},
+  editFac:()=>form('Facilities',`<label>One facility per line<textarea name="list" rows="8">${esc((S.facilities||DEF_FAC).join('\n'))}</textarea></label>`,'Save',f=>{S.facilities=f.list.split('\n').map(x=>x.trim()).filter(Boolean)})
+});
+render();
